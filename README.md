@@ -1,2 +1,5 @@
 # ScrollyTeller
-A module for creating scrolly telling graphics.
+A module for creating scrollytelling graphics.
+
+# API
+TODO
