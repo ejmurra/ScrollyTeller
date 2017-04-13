@@ -1,0 +1,26 @@
+{
+  "name": "scrolly-teller",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/ScrollyTeller.browser.js",
+  "module": "dist/ScrollyTeller.es.js",
+  "jsnext:main": "dist/ScrollyTeller.es.js",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "rimraf dist && rollup -c rollup.config.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "rxjs-es": "^5.0.0-beta.12"
+  },
+  "devDependencies": {
+    "rimraf": "^2.6.1",
+    "rollup": "^0.41.6",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-typescript": "^0.8.1",
+    "rollup-plugin-uglify": "^1.0.1",
+    "typescript": "^2.2.2",
+    "uglify-js-harmony": "^2.7.5"
+  }
+}
