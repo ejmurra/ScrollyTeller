@@ -1,6 +1,6 @@
 {
   "name": "scrolly-teller",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A module for creating scrollytelling graphics",
   "main": "dist/ScrollyTeller.browser.js",
   "module": "dist/ScrollyTeller.es.js",
