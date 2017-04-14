@@ -195,7 +195,6 @@ export class ScrollyTeller {
 
         // graph emitter
         if (this.active) {
-          console.log("emitting graphs");
           const boundingRects = this.graphChildren.map((el) => el.getBoundingClientRect());
           for (let elRect of boundingRects) {
             const idx = boundingRects.indexOf(elRect);
@@ -203,7 +202,7 @@ export class ScrollyTeller {
             if (!inView) {
               if (elRect.top >= 0 && elRect.bottom <= (window.innerHeight || document.documentElement.clientHeight)) {
                 this.graphChildren[idx].dataset.viewable = "true";
-                this._subscriptions[`graph-${idx}`].emit({
+                this._subscriptions[`graph${idx}`].emit({
                   graphState: "entered",
                   scrollDirection: scrollDown ? "down" : "up",
                   state: this.state,
@@ -213,7 +212,7 @@ export class ScrollyTeller {
             } else {
               if (elRect.bottom <= 0 || elRect.top >= (window.innerHeight || document.documentElement.clientHeight)) {
                 this.graphChildren[idx].dataset.viewable = "";
-                this._subscriptions[`graph-${idx}`].emit({
+                this._subscriptions[`graph${idx}`].emit({
                   graphState: "exited",
                   scrollDirection: scrollDown ? "down" : "up",
                   state: this.state,
@@ -238,6 +237,7 @@ export class ScrollyTeller {
     contentWell.style.cssText = this.styleObjToString(this.contentWellDefaultStyles);
     for (let graph of this.graphs) {
       const idx = this.graphs.indexOf(graph);
+      this._subscriptions[`graph${idx}`] = new EventEmitter();
       let p = document.createElement("p");
       p.style.cssText = this.styleObjToString(this.graphDefaultStyles);
       p.style.marginTop = this.graphMargin;
