@@ -9,9 +9,9 @@ export declare class ScrollyTeller {
     events: EventEmitter<any>;
     topSpacer: HTMLElement;
     bottomSpacer: HTMLElement;
+    private ticking;
     private lastScroll;
     private _graphMargin;
-    private ticking;
     private graphChildren;
     private topInView;
     private botInView;
@@ -41,9 +41,7 @@ export declare class ScrollyTeller {
     });
     activate(): ScrollyTeller;
     deactivate(): ScrollyTeller;
-    private activationHandler();
-    private scrollEmitterFunction();
-    private scrollThrottler(fn);
+    private scrollHandler();
     private createContentWell();
     private createScrollCover();
     private createGraphicRoot();

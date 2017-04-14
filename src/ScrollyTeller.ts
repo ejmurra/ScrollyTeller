@@ -10,9 +10,9 @@ export class ScrollyTeller {
   events: EventEmitter<any> = new EventEmitter();
   topSpacer: HTMLElement;
   bottomSpacer: HTMLElement;
+  private ticking = false;
   private lastScroll = 0;
   private _graphMargin: string;
-  private ticking = false;
   private graphChildren: HTMLElement[];
   private topInView = false;
   private botInView = false;
@@ -121,87 +121,81 @@ export class ScrollyTeller {
     this.anchorRoot.parentElement.insertBefore(this.topSpacer, this.anchorRoot);
     this.anchorRoot.parentElement.insertBefore(this.bottomSpacer, this.anchorRoot.nextSibling);
 
-    document.addEventListener("scroll", this.scrollThrottler(this.activationHandler));
+    document.addEventListener("scroll", this.scrollHandler.bind(this));
   }
 
 
   activate(): ScrollyTeller {
-    document.addEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction));
     this.events.emit({event: "activated"});
     this.active = true;
     return this;
   }
 
   deactivate(): ScrollyTeller {
-    document.removeEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction));
     this.events.emit({event: "deactivated"});
     this.active = false;
     return this;
   }
 
-  private activationHandler() {
-    const topRect = this.topSpacer.getBoundingClientRect();
-    const botRect = this.bottomSpacer.getBoundingClientRect();
-    const scrollDown = window.scrollY > this.lastScroll;
-    this.lastScroll = window.scrollY;
-    const viewHeight = (window.innerHeight || document.documentElement.clientHeight);
+  private scrollHandler() {
+    if (this.ticking) {
+      window.requestAnimationFrame(() => {
+        const topRect = this.topSpacer.getBoundingClientRect();
+        const botRect = this.bottomSpacer.getBoundingClientRect();
+        const scrollDown = window.scrollY > this.lastScroll;
+        this.lastScroll = window.scrollY;
+        const viewHeight = (window.innerHeight || document.documentElement.clientHeight);
 
-    if (topRect.bottom > -0 && topRect.bottom <= viewHeight) {
-      if (!this.topInView && scrollDown) {
-        this.activate();
-        this.topInView = true;
-      }
-      if (!this.topInView && !scrollDown) {
-        this.deactivate();
-        this.topInView = true;
-      }
-    } else {
-      this.topInView = false;
-    }
-
-    if (botRect.bottom >= 0 && botRect.bottom <= viewHeight) {
-      if (!this.botInView && scrollDown) {
-        this.deactivate();
-        this.botInView = true;
-      }
-      if (!this.botInView && !scrollDown) {
-        this.activate();
-        this.botInView = true;
-      }
-    } else {
-      this.botInView = false;
-    }
-  }
-
-  private scrollEmitterFunction() {
-    const boundingRects = this.graphChildren.map((el) => el.getBoundingClientRect());
-    for (let elRect of boundingRects) {
-      const idx = boundingRects.indexOf(elRect);
-      const inView = Boolean(this.graphChildren[idx].dataset.viewable);
-      if (!inView) {
-        if (elRect.top >= 0 && elRect.bottom <= (window.innerHeight || document.documentElement.clientHeight)) {
-          this.graphChildren[idx].dataset.viewable = "true";
-          this.events.emit({event: "entered", el: `scrolly-graph-${idx}`})
+        if (topRect.bottom > -0 && topRect.bottom <= viewHeight) {
+          if (!this.topInView && scrollDown) {
+            this.activate();
+            this.topInView = true;
+          }
+          if (!this.topInView && !scrollDown) {
+            this.deactivate();
+            this.topInView = true;
+          }
+        } else {
+          this.topInView = false;
         }
-      } else {
-        if (elRect.bottom <= 0 || elRect.top >= (window.innerHeight || document.documentElement.clientHeight)) {
-          this.graphChildren[idx].dataset.viewable = "";
-          this.events.emit({event: "exited", el: `scrolly-graph-${idx}`})
-        }
-      }
-    }
-    this.ticking = false;
-  }
 
-  private scrollThrottler(fn: () => void) {
-    let ticking = false;
-    return () => {
-      if (ticking) {
-        window.requestAnimationFrame(fn.bind(this));
-        ticking = false;
-      }
-      ticking = true;
-    };
+        if (botRect.bottom >= 0 && botRect.bottom <= viewHeight) {
+          if (!this.botInView && scrollDown) {
+            this.deactivate();
+            this.botInView = true;
+          }
+          if (!this.botInView && !scrollDown) {
+            this.activate();
+            this.botInView = true;
+          }
+        } else {
+          this.botInView = false;
+        }
+
+        // graph emitter
+        if (this.active) {
+          console.log("emitting graphs");
+          const boundingRects = this.graphChildren.map((el) => el.getBoundingClientRect());
+          for (let elRect of boundingRects) {
+            const idx = boundingRects.indexOf(elRect);
+            const inView = Boolean(this.graphChildren[idx].dataset.viewable);
+            if (!inView) {
+              if (elRect.top >= 0 && elRect.bottom <= (window.innerHeight || document.documentElement.clientHeight)) {
+                this.graphChildren[idx].dataset.viewable = "true";
+                this.events.emit({event: "entered", el: `scrolly-graph-${idx}`})
+              }
+            } else {
+              if (elRect.bottom <= 0 || elRect.top >= (window.innerHeight || document.documentElement.clientHeight)) {
+                this.graphChildren[idx].dataset.viewable = "";
+                this.events.emit({event: "exited", el: `scrolly-graph-${idx}`})
+              }
+            }
+          }
+        }
+      });
+      this.ticking = false;
+    }
+    this.ticking = true;
   }
 
   private createContentWell(): HTMLElement {
