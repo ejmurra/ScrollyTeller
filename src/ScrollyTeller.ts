@@ -6,6 +6,7 @@ export class ScrollyTeller {
   graphicRoot: HTMLElement;
   scrollCover: HTMLElement;
   contentWell: HTMLElement;
+  active: boolean = false;
   events: EventEmitter<any> = new EventEmitter();
   private _graphMargin: string;
   private ticking = false;
@@ -110,13 +111,15 @@ export class ScrollyTeller {
     this.graphicRootStyles = {"background-color": color || "#0e1d1d"};
     document.addEventListener("scroll", this.scrollThrottler.bind(this));
     this.events.emit({event: "activated"});
+    this.active = true;
     return this;
   }
 
   deactivate(color: string): ScrollyTeller {
-    this.graphicRootStyles = {"background-color": color || "#0e1d1d"};
+    this.graphicRootStyles = {"background-color": color || "inherit"};
     document.removeEventListener("scroll", this.scrollThrottler.bind(this));
     this.events.emit({event: "deactivated"});
+    this.active = false;
     return this;
   }
 
