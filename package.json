@@ -1,6 +1,6 @@
 {
   "name": "scrolly-teller",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A module for creating scrollytelling graphics",
   "main": "dist/ScrollyTeller.cjs.js",
   "module": "dist/ScrollyTeller.es.js",
@@ -13,9 +13,7 @@
   },
   "author": "Eli Murray",
   "license": "MIT",
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/ejmurra/ScrollyTeller.git"
