@@ -110,8 +110,8 @@ export class ScrollyTeller {
     this.scrollCover.appendChild(this.contentWell);
     this.anchorRoot.appendChild(this.scrollCover);
 
-    this.topSpacer = document.createElement("span");
-    this.bottomSpacer = document.createElement("span");
+    this.topSpacer = document.createElement("div");
+    this.bottomSpacer = document.createElement("div");
     this.topSpacer.id = "scrolly-teller-top-spacer";
     this.bottomSpacer.id = "scrolly-teller-bottom-spacer";
     this.topSpacer.style.height = this.bottomSpacer.style.height = "80vh";
@@ -133,7 +133,7 @@ export class ScrollyTeller {
   }
 
   deactivate(): ScrollyTeller {
-    document.removeEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction.bind(this)));
+    document.removeEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction));
     this.events.emit({event: "deactivated"});
     this.active = false;
     return this;
@@ -146,7 +146,7 @@ export class ScrollyTeller {
     this.lastScroll = window.scrollY;
     const viewHeight = (window.innerHeight || document.documentElement.clientHeight);
 
-    if (topRect.bottom >- 0 && topRect.bottom <= viewHeight) {
+    if (topRect.bottom > -0 && topRect.bottom <= viewHeight) {
       if (!this.topInView && scrollDown) {
         this.activate();
         this.topInView = true;
@@ -194,12 +194,14 @@ export class ScrollyTeller {
   }
 
   private scrollThrottler(fn: () => void) {
+    let ticking = false;
     return () => {
-      if (!this.ticking) {
+      if (ticking) {
         window.requestAnimationFrame(fn.bind(this));
+        ticking = false;
       }
-      this.ticking = true;
-    }
+      ticking = true;
+    };
   }
 
   private createContentWell(): HTMLElement {
