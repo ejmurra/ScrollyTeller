@@ -7,9 +7,14 @@ export declare class ScrollyTeller {
     contentWell: HTMLElement;
     active: boolean;
     events: EventEmitter<any>;
+    topSpacer: HTMLElement;
+    bottomSpacer: HTMLElement;
+    private lastScroll;
     private _graphMargin;
     private ticking;
     private graphChildren;
+    private topInView;
+    private botInView;
     private graphicRootActiveStyles;
     private contentWellActiveStyles;
     private graphActiveStyles;
@@ -34,10 +39,11 @@ export declare class ScrollyTeller {
     constructor(root: HTMLElement | string, graphs: string[], opts?: {
         graphMargin?: string;
     });
-    activate(color: string): ScrollyTeller;
-    deactivate(color: string): ScrollyTeller;
+    activate(): ScrollyTeller;
+    deactivate(): ScrollyTeller;
+    private activationHandler();
     private scrollEmitterFunction();
-    private scrollThrottler(position);
+    private scrollThrottler(fn);
     private createContentWell();
     private createScrollCover();
     private createGraphicRoot();

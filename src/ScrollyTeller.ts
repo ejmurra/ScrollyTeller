@@ -8,9 +8,14 @@ export class ScrollyTeller {
   contentWell: HTMLElement;
   active: boolean = false;
   events: EventEmitter<any> = new EventEmitter();
+  topSpacer: HTMLElement;
+  bottomSpacer: HTMLElement;
+  private lastScroll = 0;
   private _graphMargin: string;
   private ticking = false;
   private graphChildren: HTMLElement[];
+  private topInView = false;
+  private botInView = false;
 
   private graphicRootActiveStyles: { [prop: string]: string };
   private contentWellActiveStyles: { [prop: string]: string };
@@ -104,23 +109,68 @@ export class ScrollyTeller {
     this.anchorRoot.appendChild(this.graphicRoot);
     this.scrollCover.appendChild(this.contentWell);
     this.anchorRoot.appendChild(this.scrollCover);
+
+    this.topSpacer = document.createElement("span");
+    this.bottomSpacer = document.createElement("span");
+    this.topSpacer.id = "scrolly-teller-top-spacer";
+    this.bottomSpacer.id = "scrolly-teller-bottom-spacer";
+    this.topSpacer.style.height = this.bottomSpacer.style.height = "80vh";
+    if (!this.anchorRoot.parentElement) {
+      throw new Error("Root element must be attached to DOM");
+    }
+    this.anchorRoot.parentElement.insertBefore(this.topSpacer, this.anchorRoot);
+    this.anchorRoot.parentElement.insertBefore(this.bottomSpacer, this.anchorRoot.nextSibling);
+
+    document.addEventListener("scroll", this.scrollThrottler(this.activationHandler));
   }
 
 
-  activate(color: string): ScrollyTeller {
-    this.graphicRootStyles = {"background-color": color || "#0e1d1d"};
-    document.addEventListener("scroll", this.scrollThrottler.bind(this));
+  activate(): ScrollyTeller {
+    document.addEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction));
     this.events.emit({event: "activated"});
     this.active = true;
     return this;
   }
 
-  deactivate(color: string): ScrollyTeller {
-    this.graphicRootStyles = {"background-color": color || "inherit"};
-    document.removeEventListener("scroll", this.scrollThrottler.bind(this));
+  deactivate(): ScrollyTeller {
+    document.removeEventListener("scroll", this.scrollThrottler(this.scrollEmitterFunction.bind(this)));
     this.events.emit({event: "deactivated"});
     this.active = false;
     return this;
+  }
+
+  private activationHandler() {
+    const topRect = this.topSpacer.getBoundingClientRect();
+    const botRect = this.bottomSpacer.getBoundingClientRect();
+    const scrollDown = window.scrollY > this.lastScroll;
+    this.lastScroll = window.scrollY;
+    const viewHeight = (window.innerHeight || document.documentElement.clientHeight);
+
+    if (topRect.bottom >- 0 && topRect.bottom <= viewHeight) {
+      if (!this.topInView && scrollDown) {
+        this.activate();
+        this.topInView = true;
+      }
+      if (!this.topInView && !scrollDown) {
+        this.deactivate();
+        this.topInView = true;
+      }
+    } else {
+      this.topInView = false;
+    }
+
+    if (botRect.bottom >= 0 && botRect.bottom <= viewHeight) {
+      if (!this.botInView && scrollDown) {
+        this.deactivate();
+        this.botInView = true;
+      }
+      if (!this.botInView && !scrollDown) {
+        this.activate();
+        this.botInView = true;
+      }
+    } else {
+      this.botInView = false;
+    }
   }
 
   private scrollEmitterFunction() {
@@ -143,11 +193,13 @@ export class ScrollyTeller {
     this.ticking = false;
   }
 
-  private scrollThrottler(position: any) {
-    if (!this.ticking) {
-      window.requestAnimationFrame(this.scrollEmitterFunction.bind(this));
+  private scrollThrottler(fn: () => void) {
+    return () => {
+      if (!this.ticking) {
+        window.requestAnimationFrame(fn.bind(this));
+      }
+      this.ticking = true;
     }
-    this.ticking = true;
   }
 
   private createContentWell(): HTMLElement {
