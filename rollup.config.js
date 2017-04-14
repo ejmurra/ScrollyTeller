@@ -7,7 +7,7 @@ export default {
   plugins: [
     resolve(),
     typescript(),
-    uglify({}, require("uglify-js-harmony").minify)
+    // uglify({}, require("uglify-js-harmony").minify)
   ],
   targets: [
     {dest: "dist/ScrollyTeller.es.js", format: "es"},

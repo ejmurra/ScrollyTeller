@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs-es/Subject';
+import { Subject } from "rxjs-es/Subject";
 export declare class EventEmitter<T> extends Subject<T> {
     __isAsync: boolean;
     constructor(isAsync?: boolean);
