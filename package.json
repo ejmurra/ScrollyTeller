@@ -5,9 +5,12 @@
   "main": "dist/ScrollyTeller.browser.js",
   "module": "dist/ScrollyTeller.es.js",
   "jsnext:main": "dist/ScrollyTeller.es.js",
+  "browser": "dist/ScrollyTeller.browser.js",
+  "types": "defs/",
   "scripts": {
     "dev": "tsc --watch",
-    "build": "rimraf dist && rollup -c rollup.config.js"
+    "build": "rimraf dist && rollup -c rollup.config.js && npm run defs",
+    "defs": "tsc -d --outDir defs && rimraf defs/*{.js,.js.map}"
   },
   "author": "Eli Murray",
   "license": "MIT",

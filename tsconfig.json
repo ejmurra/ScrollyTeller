@@ -3,12 +3,12 @@
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "sourceMap": true,
     "strictNullChecks": true,
     "module": "es6",
     "outDir": "dist",
     "moduleResolution": "node",
-    "target": "ES6"
+    "target": "ES6",
+    "declaration": true
   },
   "include": [
     "src/**/*"
