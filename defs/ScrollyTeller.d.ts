@@ -5,6 +5,7 @@ export declare class ScrollyTeller {
     graphicRoot: HTMLElement;
     scrollCover: HTMLElement;
     contentWell: HTMLElement;
+    active: boolean;
     events: EventEmitter<any>;
     private _graphMargin;
     private ticking;
