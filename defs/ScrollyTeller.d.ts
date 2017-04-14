@@ -1,4 +1,9 @@
-import { EventEmitter } from "./EventEmitter";
+export interface Event {
+    state: any;
+    scrollDirection: "down" | "up";
+    graphState?: "entered" | "exited";
+    setState: (state: any) => void;
+}
 export declare class ScrollyTeller {
     graphs: string[];
     anchorRoot: HTMLElement;
@@ -6,9 +11,10 @@ export declare class ScrollyTeller {
     scrollCover: HTMLElement;
     contentWell: HTMLElement;
     active: boolean;
-    events: EventEmitter<any>;
     topSpacer: HTMLElement;
     bottomSpacer: HTMLElement;
+    private state;
+    private _subscriptions;
     private ticking;
     private lastScroll;
     private _graphMargin;
@@ -23,6 +29,7 @@ export declare class ScrollyTeller {
     private contentWellDefaultStyles;
     private graphDefaultStyles;
     private scrollCoverDefaultStyles;
+    subscriptions: any;
     graphMargin: string;
     graphicRootStyles: {
         [prop: string]: string;
@@ -36,12 +43,11 @@ export declare class ScrollyTeller {
     scrollCoverStyles: {
         [prop: string]: string;
     };
-    constructor(root: HTMLElement | string, graphs: string[], opts?: {
-        graphMargin?: string;
-    });
-    activate(): ScrollyTeller;
-    deactivate(): ScrollyTeller;
+    constructor(root: HTMLElement | string, graphs: string[]);
+    private activate(direction);
+    private deactivate(direction);
     private scrollHandler();
+    private setState(newState);
     private createContentWell();
     private createScrollCover();
     private createGraphicRoot();

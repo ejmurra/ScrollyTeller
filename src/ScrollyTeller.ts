@@ -1,5 +1,12 @@
 import { EventEmitter } from "./EventEmitter";
 
+export interface Event {
+  state: any;
+  scrollDirection: "down" | "up";
+  graphState?: "entered" | "exited";
+  setState: (state: any) => void;
+}
+
 export class ScrollyTeller {
   graphs: string[];
   anchorRoot: HTMLElement;
@@ -7,9 +14,10 @@ export class ScrollyTeller {
   scrollCover: HTMLElement;
   contentWell: HTMLElement;
   active: boolean = false;
-  events: EventEmitter<any> = new EventEmitter();
   topSpacer: HTMLElement;
   bottomSpacer: HTMLElement;
+  private state: any = {};
+  private _subscriptions: { [sub: string]: EventEmitter<Event> } = {};
   private ticking = false;
   private lastScroll = 0;
   private _graphMargin: string;
@@ -45,6 +53,16 @@ export class ScrollyTeller {
     "width": "100vw",
     "z-index": "5"
   };
+
+  set subscriptions(subObj: any) {
+    for (let key in subObj) {
+      if (subObj.hasOwnProperty(key)) {
+        if (this._subscriptions[key]) {
+          this._subscriptions[key].subscribe(subObj[key])
+        }
+      }
+    }
+  }
 
   get graphMargin() {
     return this._graphMargin || "40vh";
@@ -92,7 +110,7 @@ export class ScrollyTeller {
     this.scrollCover.style.cssText = this.styleObjToString(this.scrollCoverActiveStyles);
   }
 
-  constructor(root: HTMLElement | string, graphs: string[], opts?: { graphMargin?: string }) {
+  constructor(root: HTMLElement | string, graphs: string[]) {
     if (!root || !graphs) {
       throw new Error(`Class ScrollyTeller is missing required arguments. Please specify a root element and graphs of text.
                 Given: {
@@ -110,6 +128,9 @@ export class ScrollyTeller {
     this.scrollCover.appendChild(this.contentWell);
     this.anchorRoot.appendChild(this.scrollCover);
 
+    this._subscriptions.activated = new EventEmitter();
+    this._subscriptions.deactivated = new EventEmitter();
+
     this.topSpacer = document.createElement("div");
     this.bottomSpacer = document.createElement("div");
     this.topSpacer.id = "scrolly-teller-top-spacer";
@@ -125,14 +146,14 @@ export class ScrollyTeller {
   }
 
 
-  activate(): ScrollyTeller {
-    this.events.emit({event: "activated"});
+  private activate(direction: "up" | "down"): ScrollyTeller {
+    this._subscriptions.activated.emit({state: this.state, scrollDirection: direction, setState: this.setState.bind(this)});
     this.active = true;
     return this;
   }
 
-  deactivate(): ScrollyTeller {
-    this.events.emit({event: "deactivated"});
+  private deactivate(direction: "up" | "down"): ScrollyTeller {
+    this._subscriptions.deactivated.emit({state: this.state, scrollDirection: direction, setState: this.setState.bind(this)});
     this.active = false;
     return this;
   }
@@ -148,11 +169,11 @@ export class ScrollyTeller {
 
         if (topRect.bottom > -0 && topRect.bottom <= viewHeight) {
           if (!this.topInView && scrollDown) {
-            this.activate();
+            this.activate(scrollDown ? "down" : "up");
             this.topInView = true;
           }
           if (!this.topInView && !scrollDown) {
-            this.deactivate();
+            this.deactivate(scrollDown ? "down" : "up");
             this.topInView = true;
           }
         } else {
@@ -161,11 +182,11 @@ export class ScrollyTeller {
 
         if (botRect.bottom >= 0 && botRect.bottom <= viewHeight) {
           if (!this.botInView && scrollDown) {
-            this.deactivate();
+            this.deactivate(scrollDown ? "down" : "up");
             this.botInView = true;
           }
           if (!this.botInView && !scrollDown) {
-            this.activate();
+            this.activate(scrollDown ? "down" : "up");
             this.botInView = true;
           }
         } else {
@@ -182,12 +203,22 @@ export class ScrollyTeller {
             if (!inView) {
               if (elRect.top >= 0 && elRect.bottom <= (window.innerHeight || document.documentElement.clientHeight)) {
                 this.graphChildren[idx].dataset.viewable = "true";
-                this.events.emit({event: "entered", el: `scrolly-graph-${idx}`})
+                this._subscriptions[`graph-${idx}`].emit({
+                  graphState: "entered",
+                  scrollDirection: scrollDown ? "down" : "up",
+                  state: this.state,
+                  setState: this.setState.bind(this)
+                })
               }
             } else {
               if (elRect.bottom <= 0 || elRect.top >= (window.innerHeight || document.documentElement.clientHeight)) {
                 this.graphChildren[idx].dataset.viewable = "";
-                this.events.emit({event: "exited", el: `scrolly-graph-${idx}`})
+                this._subscriptions[`graph-${idx}`].emit({
+                  graphState: "exited",
+                  scrollDirection: scrollDown ? "down" : "up",
+                  state: this.state,
+                  setState: this.setState.bind(this)
+                })
               }
             }
           }
@@ -196,6 +227,10 @@ export class ScrollyTeller {
       this.ticking = false;
     }
     this.ticking = true;
+  }
+
+  private setState(newState: any) {
+    this.state = newState;
   }
 
   private createContentWell(): HTMLElement {
