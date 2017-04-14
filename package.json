@@ -1,6 +1,6 @@
 {
   "name": "scrolly-teller",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A module for creating scrollytelling graphics",
   "main": "dist/ScrollyTeller.cjs.js",
   "module": "dist/ScrollyTeller.es.js",
@@ -14,13 +14,14 @@
   "author": "Eli Murray",
   "license": "MIT",
   "dependencies": {
-    "rxjs-es": "^5.0.0-beta.12"
+
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/ejmurra/ScrollyTeller.git"
   },
   "devDependencies": {
+    "rxjs-es": "^5.0.0-beta.12",
     "rimraf": "^2.6.1",
     "rollup": "^0.41.6",
     "rollup-plugin-node-resolve": "^3.0.0",
