@@ -49,7 +49,8 @@ export class ScrollyTeller {
     for (let childEl of this.graphChildren) {
       const margins = {
         "margin-top": this._graphMargin,
-        "margin-bottom": this.graphChildren.indexOf(childEl) === this.graphChildren.length - 1 ? this._graphMargin : "inherit"
+        "margin-bottom": this.graphChildren.indexOf(
+          childEl) === this.graphChildren.length - 1 ? this._graphMargin : "inherit"
       };
       childEl.style.cssText = this.styleObjToString(Object.assign({}, this.graphActiveStyles, margins))
     }
@@ -72,7 +73,8 @@ export class ScrollyTeller {
     for (let childEl of this.graphChildren) {
       const margins = {
         "margin-top": this.graphMargin,
-        "margin-bottom": this.graphChildren.indexOf(childEl) === this.graphChildren.length - 1 ? this.graphMargin : "inherit"
+        "margin-bottom": this.graphChildren.indexOf(
+          childEl) === this.graphChildren.length - 1 ? this.graphMargin : "inherit"
       };
       childEl.style.cssText = this.styleObjToString(Object.assign({}, this.graphActiveStyles, margins));
     }
@@ -105,14 +107,14 @@ export class ScrollyTeller {
 
 
   activate(color: string): ScrollyTeller {
-    this.graphicRootStyles = { "background-color": color || "#0e1d1d" };
+    this.graphicRootStyles = {"background-color": color || "#0e1d1d"};
     document.addEventListener("scroll", this.scrollThrottler.bind(this));
     this.events.emit({event: "activated"});
     return this;
   }
 
   deactivate(color: string): ScrollyTeller {
-    this.graphicRootStyles = { "background-color": color || "#0e1d1d" };
+    this.graphicRootStyles = {"background-color": color || "#0e1d1d"};
     document.removeEventListener("scroll", this.scrollThrottler.bind(this));
     this.events.emit({event: "deactivated"});
     return this;
@@ -123,15 +125,15 @@ export class ScrollyTeller {
     for (let elRect of boundingRects) {
       const idx = boundingRects.indexOf(elRect);
       const inView = Boolean(this.graphChildren[idx].dataset.viewable);
-      if (! inView) {
+      if (!inView) {
         if (elRect.top >= 0 && elRect.bottom <= (window.innerHeight || document.documentElement.clientHeight)) {
           this.graphChildren[idx].dataset.viewable = "true";
-          this.events.emit({ event: "entered", el: `scrolly-graph-${idx}` })
+          this.events.emit({event: "entered", el: `scrolly-graph-${idx}`})
         }
       } else {
         if (elRect.bottom <= 0 || elRect.top >= (window.innerHeight || document.documentElement.clientHeight)) {
           this.graphChildren[idx].dataset.viewable = "";
-          this.events.emit({ event: "exited", el: `scrolly-graph-${idx}` })
+          this.events.emit({event: "exited", el: `scrolly-graph-${idx}`})
         }
       }
     }

@@ -2,9 +2,8 @@
   "name": "scrolly-teller",
   "version": "0.0.4",
   "description": "A module for creating scrollytelling graphics",
-  "main": "dist/ScrollyTeller.browser.js",
+  "main": "dist/ScrollyTeller.cjs.js",
   "module": "dist/ScrollyTeller.es.js",
-  "jsnext:main": "dist/ScrollyTeller.es.js",
   "browser": "dist/ScrollyTeller.browser.js",
   "types": "defs/",
   "scripts": {
