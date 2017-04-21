@@ -123,7 +123,7 @@ export class ScrollyTeller {
   private activate(direction: "up" | "down") {
     const emitDirection = direction === "down" ? "fromTop" : "fromBottom";
     this.active = true;
-    this._subscriptions.activated[emitDirection].emit({state: this.state, setState: this.setState});
+    this._subscriptions.activated[emitDirection].emit({state: this.state, setState: this.setState, scrollyTeller: this });
   }
 
   /**
@@ -133,7 +133,7 @@ export class ScrollyTeller {
   private deactivate(direction: "up" | "down") {
     const emitDirection = direction === "down" ? "fromTop" : "fromBottom";
     this.active = false;
-    this._subscriptions.deactivated[emitDirection].emit({state: this.state, setState: this.setState});
+    this._subscriptions.deactivated[emitDirection].emit({state: this.state, setState: this.setState, scrollyTeller: this });
   }
 
   /**
@@ -185,13 +185,13 @@ export class ScrollyTeller {
               const emitterString = scrollDown ? "enterBottom" : "enterTop";
               if (elRect.top >= 0 && elRect.bottom <= viewHeight) {
                 el.dataset.viewable = "true";
-                this._subscriptions[`graph${idx}`][emitterString].emit({ state: this.state, setState: this.setState });
+                this._subscriptions[`graph${idx}`][emitterString].emit({ state: this.state, setState: this.setState, scrollyTeller: this });
               }
             } else {
               const emitterString = scrollDown ? "exitTop" : "exitBottom";
               if (elRect.bottom <= 0 || elRect.top >= viewHeight) {
                 el.dataset.viewable = "false";
-                this._subscriptions[`graph${idx}`][emitterString].emit({ state: this.state, setState: this.setState });
+                this._subscriptions[`graph${idx}`][emitterString].emit({ state: this.state, setState: this.setState, scrollyTeller: this });
               }
             }
           })
