@@ -235,7 +235,7 @@ export class ScrollyTeller {
         "exitTop": new EventEmitter(),
         "exitBottom": new EventEmitter()
       };
-      let p = document.createElement("p");
+      const p = document.createElement("p");
       p.style.cssText = this.styleObjToString(this.graphDefaultStyles);
       p.style.marginTop = this.graphMargin;
       if (idx === this.graphs.length - 1) {

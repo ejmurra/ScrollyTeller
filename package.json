@@ -5,7 +5,7 @@
   "main": "dist/ScrollyTeller.cjs.js",
   "module": "dist/ScrollyTeller.es.js",
   "browser": "dist/ScrollyTeller.browser.js",
-  "types": "defs/",
+  "types": "defs/ScrollyTeller.d.ts",
   "scripts": {
     "dev": "tsc --watch",
     "build": "rimraf dist && rollup -c rollup.config.js && npm run defs",
