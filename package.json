@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "rimraf dist && rollup -c rollup.config.js && npm run defs",
-    "defs": "tsc -d --outDir defs && rimraf defs/*{.js,.js.map}"
+    "defs": "tsc -d --outDir defs && rimraf defs/*{.js,.js.map}",
+    "test": "karma start"
   },
   "author": "Eli Murray",
   "license": "MIT",
@@ -19,12 +20,19 @@
     "url": "https://github.com/ejmurra/ScrollyTeller.git"
   },
   "devDependencies": {
-    "rxjs-es": "^5.0.0-beta.12",
+    "@types/jasmine": "^2.5.47",
+    "jasmine-core": "^2.6.0",
+    "karma": "^1.6.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-typescript": "^3.0.1",
+    "karma-typescript-es6-transform": "^1.0.0",
     "rimraf": "^2.6.1",
     "rollup": "^0.41.6",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-typescript": "^0.8.1",
     "rollup-plugin-uglify": "^1.0.1",
+    "rxjs-es": "^5.0.0-beta.12",
     "typescript": "^2.2.2",
     "uglify-js-harmony": "^2.7.5"
   }
