@@ -51,6 +51,3 @@ dist
 node_modules
 .idea
 coverage
-
-# Allow
-!node_modules/jasmine-core/*
