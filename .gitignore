@@ -53,4 +53,4 @@ node_modules
 coverage
 
 # Allow
-!node_modules/jasmine-core
+!node_modules/jasmine-core/*
