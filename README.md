@@ -1,5 +1,2 @@
 # ScrollyTeller
-A module for creating scrollytelling graphics.
-
-# API
-TODO
+Coming back to this project. TKTKTKTKTKTKTKTK

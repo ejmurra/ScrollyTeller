@@ -1,20 +1,17 @@
 {
   "compilerOptions": {
-    "noImplicitAny": true,
-    "removeComments": true,
-    "preserveConstEnums": true,
-    "strictNullChecks": true,
-    "module": "es6",
-    "outDir": "dist",
+    "module": "ES2020",
     "moduleResolution": "node",
-    "target": "ES6",
-    "declaration": true
+    "target": "es2022",
+    "sourceMap": true,
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist/defs",
   },
   "include": [
-    "src/**/*",
-    "test/**/*"
+    "src",
   ],
   "exclude": [
-    "./node_modules"
+    "node_modules"
   ]
 }
