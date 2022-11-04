@@ -1,5 +1,6 @@
 import { Observable, BehaviorSubject, Subscription, combineLatest, fromEvent, of } from "rxjs";
 import { distinctUntilChanged, debounceTime, bufferCount, filter, map, switchMap, } from "rxjs/operators";
+import { scaleLinear } from "d3-scale";
 
 export const log = (...args: any[]) => <T>(data: T): T => {
     console.log.apply(null, args.concat([data]))
@@ -44,16 +45,16 @@ export class Graphic {
     private screenHeight$: BehaviorSubject<number>;
     private fallback$: BehaviorSubject<boolean>;
     private scrollPos$: Observable<number>;
-    private scrollRel$: Observable<DOMRect>;
+    // private scrollRel$: Observable<number>;
     private totalScreenLengths: number;
     private vizPlate: HTMLDivElement;
     private textPlate: HTMLDivElement;
     private sceneBuffer: number;
     private text: any[];
     private isMounted: boolean = false;
-    private activeSteps: any[] = [];
-    private b1: HTMLDivElement;
-    private b2: HTMLDivElement;
+    // private b1: HTMLDivElement;
+    // private b2: HTMLDivElement;
+    private mountPoint: string;
 
     private cancelOnUnmount: Subscription[] = [];
 
@@ -64,6 +65,7 @@ export class Graphic {
         this.resize$ = new BehaviorSubject(window)
         this.screenHeight$ = new BehaviorSubject(window.innerHeight - 50);
         this.fallback$ = new BehaviorSubject(false);
+        this.mountPoint = mountPoint;
         // This adds a default half screen-length buffer before and after the graphic
         this.sceneBuffer = sceneBuffer || .5
         this.totalScreenLengths = Object.entries(scenes).map(([k, v]) => v.screenLengths + this.sceneBuffer).reduce((a, c) => a + c, 0);
@@ -71,13 +73,13 @@ export class Graphic {
         this.textPlate = document.createElement("div")
         this.vizPlate = document.createElement("div");
         // Spacer elements for before an after the graphic
-        this.b1 = document.createElement("div");
-        this.b2 = document.createElement("div");
+        // this.b1 = document.createElement("div");
+        // this.b2 = document.createElement("div");
 
         // Set up scroll notification
         const anchor = document.getElementById(mountPoint);
         if (!anchor) throw new Error(`Cannot find mount point ${mountPoint}`);
-        this.scrollRel$ = this.scrollPos$.pipe(map<number, DOMRect>((_) => anchor.getBoundingClientRect()));
+        // this.scrollRel$ = this.scrollPos$.pipe(map<number, number>((loc) => loc - anchor.getBoundingClientRect().top));
 
         if (debug) {
             this.cancelOnUnmount.push(
@@ -91,11 +93,11 @@ export class Graphic {
             // debug logging
             this.cancelOnUnmount = this.cancelOnUnmount.concat(
                 [
-                    ["resize", this.resize$],
-                    ["scrollPos", this.scrollPos$],
-                    ["scrollRel", this.scrollRel$],
-                    ["fallback", this.fallback$],
-                    ["screenHeight", this.screenHeight$]
+                    // ["resize", this.resize$],
+                    // ["scrollPos", this.scrollPos$],
+                    // ["scrollRel", this.scrollRel$],
+                    // ["fallback", this.fallback$],
+                    // ["screenHeight", this.screenHeight$]
                 ].map(([name, sub]) => (<any>sub).subscribe(log(name)))
             )
         }
@@ -105,10 +107,10 @@ export class Graphic {
         this.fallback$.next(v);
     }
 
-    public mount(id: string): void {
+    public mount(): void {
         let initialHeight = window.innerHeight;
         if (!this.isMounted) {
-            this.initializePlateStyles(id);
+            this.initializePlateStyles(this.mountPoint);
         }
 
         this.listenResize(initialHeight);
@@ -121,7 +123,14 @@ export class Graphic {
         this.isMounted = true;
     }
 
+    public unmount(): void {
+        for (let sub of this.cancelOnUnmount) {
+            sub.unsubscribe();
+        }
+    }
+
     private activateAllScenes() {
+        const anchor = document.getElementById(this.mountPoint).getBoundingClientRect();
         this.sceneOrder.map((id, index) => {
             const scene = this.scenes[id];
             let offsetScreens = 0;
@@ -133,13 +142,19 @@ export class Graphic {
             }
             // offsetScreens += this.screenBuffer
 
-            const progress$ = combineLatest([this.scrollRel$, this.screenHeight$]).pipe(
+            const progress$ = combineLatest([this.scrollPos$, this.screenHeight$]).pipe(
                 map(([pos, height]) => {
-                    const viewMid = ((pos.top) - height / 2) + (offsetScreens * height);
                     const totalHeight = scene.screenLengths * height;
-                    // console.log(totalHeight)
-                    if (viewMid >= 0) return 0;
-                    return (-viewMid / totalHeight) > 1 ? 1 : -viewMid / totalHeight
+                    let s = scaleLinear().domain([anchor.top, anchor.top + totalHeight + height]).range([0, 1]).clamp(true);
+
+                    console.log({
+                        pos,
+                        t: anchor.top,
+                        prog: s(pos),
+                        b: anchor.top + totalHeight,
+                        height
+                    })
+                    return s(pos)
                 }),
                 distinctUntilChanged()
             )
@@ -205,8 +220,8 @@ export class Graphic {
         this.cancelOnUnmount.push(this.screenHeight$.subscribe(x => {
             this.textPlate.style.height = `${x * this.totalScreenLengths}px`;
             this.vizPlate.style.height = `${x}px`;
-            this.b1.style.height = `${x * this.sceneBuffer}`
-            this.b2.style.height = `${x * this.sceneBuffer}`
+            // this.b1.style.height = `${x * this.sceneBuffer}`
+            // this.b2.style.height = `${x * this.sceneBuffer}`
         }));
     }
 
@@ -217,40 +232,19 @@ export class Graphic {
         this.textPlate.style.zIndex = "10";
         this.vizPlate.style.zIndex = "1";
         this.textPlate.style.position = "relative";
-        this.vizPlate.style.position = "fixed";
+        this.vizPlate.style.position = "relative";
         this.textPlate.style.top = "0";
         this.vizPlate.style.top = "0";
         this.textPlate.style.left = "0";
         this.vizPlate.style.left = "0";
+        this.vizPlate.style.marginLeft = "0";
         this.textPlate.style.width = "100%";
         this.vizPlate.style.width = "100%";
         this.vizPlate.classList.add("viz-plate");
         this.textPlate.classList.add("text-plate");
     }
 
-    public unmount(): void {
-        for (let sub of this.cancelOnUnmount) {
-            sub.unsubscribe();
-        }
-    }
 
-    private adjustStepHeight(x: number) {
-        for (let step of this.activeSteps) {
-            step.el.style.top = `${x * step.screenLengthPos}px`
-        }
-    }
-
-
-
-    private getContainersForScene(id: string): {graphicContainer: HTMLDivElement} {
-        const s = this.scenes[id];
-        if (!s) {
-            throw new Error(`No scene registered with id ${id}`);
-        }
-        return {
-            graphicContainer: s.graphicContainer
-        }
-    }
 
     private static isKonamiCode(buffer) {
         return [38, 38, 40, 40, 37, 39, 37, 39, 66, 65].toString() === buffer.toString();

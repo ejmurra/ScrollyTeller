@@ -207,8 +207,10 @@ export class StageScene implements iScene {
 export type VideoParams = {
     framerate: number;
     vidEl: HTMLVideoElement;
-    frameSteps: number;
+    frameStepsDesktop: number;
+    frameStepsMobile: number;
     numFrames: number;
+    isMobile: boolean;
 }
 
 export type VideoSceneParams = SceneParams & VideoParams;
@@ -220,7 +222,8 @@ export class VideoScene implements iScene {
 
     private vidEl: HTMLVideoElement;
     private framerate: number;
-    private frameSteps: number;
+    private frameStepsDesktop: number;
+    private frameStepsMobile: number;
 
     private lastDrawn$ = new BehaviorSubject<number>(0);
     private lastToDraw$ = new BehaviorSubject<number[]>([]);
@@ -229,22 +232,28 @@ export class VideoScene implements iScene {
     private timeupdate$: Observable<number>;
     private numFrames: number;
     private isMounted = false;
+    private isMobile = false;
 
     constructor(p: VideoSceneParams) {
         this.vidEl = p.vidEl
         this.framerate = p.framerate;
         this.screenLengths = p.screenLengths;
-        this.frameSteps = p.frameSteps;
+        this.frameStepsDesktop = p.frameStepsDesktop;
+        this.frameStepsMobile = p.frameStepsMobile;
         // this.steps = p.steps;
         this.numFrames = p.numFrames;
-
+        this.isMobile = p.isMobile
 
         this.timeupdate$ = fromEvent<number>(this.vidEl, "timeupdate")
 
         this.graphicContainer = document.createElement("div")
         this.textContainer = document.createElement("div")
         this.graphicContainer.classList.add("vid-container")
-        this.graphicContainer.classList.add((<any>window).isMobile.any ? "mobile-vid" : "desktop-vid")
+        this.graphicContainer.classList.add(this.isMobile ? "mobile-vid" : "desktop-vid")
+        this.graphicContainer.style.position = "absolute"
+        this.graphicContainer.style.top = "0px";
+        this.graphicContainer.style.left = "0px";
+        this.graphicContainer.style.removeProperty("bottom");
         for (let el of [this.graphicContainer, this.textContainer]) {
             el.style.width = "100%";
         }
@@ -254,15 +263,36 @@ export class VideoScene implements iScene {
     activate(params: SceneActivationParams): Subscription[] {
         let subs = [];
 
+        params.progress$.subscribe(p => {
+            if (p > 0 && p < 1) {
+                this.graphicContainer.style.position = "fixed";
+                this.graphicContainer.style.top = "0px";
+                this.graphicContainer.style.left = "0px";
+                this.graphicContainer.style.removeProperty("bottom");
+            }
+            if (p === 0) {
+                this.graphicContainer.style.position = "absolute"
+                this.graphicContainer.style.top = "0px";
+                this.graphicContainer.style.left = "0px";
+                this.graphicContainer.style.removeProperty("bottom");
+            } else if (p === 1) {
+                this.graphicContainer.style.position = "absolute"
+                this.graphicContainer.style.removeProperty("top");
+                this.graphicContainer.style.left = "0px";
+                this.graphicContainer.style.bottom = "0px";
+            }
+        })
+
         let timesToDraw$ = params.progress$.pipe(
             throttleTime(100),
             distinctUntilChanged(),
             withLatestFrom(this.lastDrawn$),
             switchMap(([scrollPct, lastDrawn]) => {
+                const steps = this.isMobile ? this.frameStepsMobile : this.frameStepsDesktop
                 const targetFrame = this.numFrames * scrollPct;
-                const frameDiff = (targetFrame - lastDrawn) / this.frameSteps;
+                const frameDiff = (targetFrame - lastDrawn) / steps;
                 const times = []
-                for (let i = 1; i < this.frameSteps + 1; i++) {
+                for (let i = 1; i < steps + 1; i++) {
                     times.push(lastDrawn + (i * frameDiff))
                 }
                 return of(times);
@@ -273,6 +303,7 @@ export class VideoScene implements iScene {
             debounceTime(20),
             withLatestFrom(timesToDraw$, this.lastToDraw$, this.remainder$)
         ).subscribe(([_, t, l, r]) => {
+            // console.log({t, l, r})
             // If t and l are the same, continue to drain r
             if (JSON.stringify(t) === JSON.stringify(l)) {
                 const d = r.shift();
