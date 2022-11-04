@@ -1,10 +1,29 @@
 {
+  "name": "scrolly-teller",
+  "version": "0.0.15",
+  "description": "A module for creating scrollytelling graphics",
+  "main": "dist/main.js",
+  "module": "dist/main.js",
+  "browser": "dist/main.js",
+  "types": "dist/defs/main.d.ts",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "rimraf dist && tsc"
+  },
+  "author": "Eli Murray",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ejmurra/ScrollyTeller.git"
+  },
   "dependencies": {
     "d3": "^7.6.1",
     "rxjs": "^7.5.7"
   },
   "devDependencies": {
     "@types/d3": "^7.4.0",
+    "@types/node": "^18.11.9",
+    "rimraf": "^3.0.2",
     "typescript": "^4.8.4"
   }
 }
