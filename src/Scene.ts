@@ -233,6 +233,7 @@ export class VideoScene implements iScene {
     private numFrames: number;
     private isMounted = false;
     private isMobile = false;
+    private pinClass = "pinned";
 
     constructor(p: VideoSceneParams) {
         this.vidEl = p.vidEl
@@ -250,10 +251,7 @@ export class VideoScene implements iScene {
         this.textContainer = document.createElement("div")
         this.graphicContainer.classList.add("vid-container")
         this.graphicContainer.classList.add(this.isMobile ? "mobile-vid" : "desktop-vid")
-        this.graphicContainer.style.position = "absolute"
-        this.graphicContainer.style.top = "0px";
-        this.graphicContainer.style.left = "0px";
-        this.graphicContainer.style.removeProperty("bottom");
+        this.graphicContainer.classList.add(this.pinClass);
         for (let el of [this.graphicContainer, this.textContainer]) {
             el.style.width = "100%";
         }
@@ -265,21 +263,16 @@ export class VideoScene implements iScene {
 
         params.progress$.subscribe(p => {
             if (p > 0 && p < 1) {
-                this.graphicContainer.style.position = "fixed";
-                this.graphicContainer.style.top = "0px";
-                this.graphicContainer.style.left = "0px";
-                this.graphicContainer.style.removeProperty("bottom");
+                this.graphicContainer.classList.add(this.pinClass)
+                this.graphicContainer.classList.remove(`not-${this.pinClass}`)
             }
             if (p === 0) {
-                this.graphicContainer.style.position = "absolute"
-                this.graphicContainer.style.top = "0px";
-                this.graphicContainer.style.left = "0px";
-                this.graphicContainer.style.removeProperty("bottom");
+                this.graphicContainer.classList.remove(this.pinClass)
+                this.graphicContainer.classList.add(`not-${this.pinClass}`)
             } else if (p === 1) {
-                this.graphicContainer.style.position = "absolute"
-                this.graphicContainer.style.removeProperty("top");
-                this.graphicContainer.style.left = "0px";
-                this.graphicContainer.style.bottom = "0px";
+                // TODO: different class to pin to bottom?
+                this.graphicContainer.classList.remove(this.pinClass)
+                this.graphicContainer.classList.add(`not-${this.pinClass}`)
             }
         })
 

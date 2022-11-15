@@ -36,6 +36,7 @@ export type GraphicParams = {
     text: any[];
     debug?: boolean;
     sceneBuffer?: number;
+    hiddenClass?: string;
 }
 
 export class Graphic {
@@ -52,14 +53,16 @@ export class Graphic {
     private sceneBuffer: number;
     private text: any[];
     private isMounted: boolean = false;
+    private hiddenClass: string = "hidden-scene"
     // private b1: HTMLDivElement;
     // private b2: HTMLDivElement;
     private mountPoint: string;
 
     private cancelOnUnmount: Subscription[] = [];
 
-    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, text}: GraphicParams) {
+    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, text, hiddenClass}: GraphicParams) {
         this.scenes = scenes;
+        this.hiddenClass = hiddenClass || "hidden-scene";
         this.text = text;
         this.sceneOrder = sceneOrder;
         this.resize$ = new BehaviorSubject(window)
@@ -79,7 +82,6 @@ export class Graphic {
         // Set up scroll notification
         const anchor = document.getElementById(mountPoint);
         if (!anchor) throw new Error(`Cannot find mount point ${mountPoint}`);
-        // this.scrollRel$ = this.scrollPos$.pipe(map<number, number>((loc) => loc - anchor.getBoundingClientRect().top));
 
         if (debug) {
             this.cancelOnUnmount.push(
@@ -146,14 +148,6 @@ export class Graphic {
                 map(([pos, height]) => {
                     const totalHeight = scene.screenLengths * height;
                     let s = scaleLinear().domain([anchor.top, anchor.top + totalHeight + height]).range([0, 1]).clamp(true);
-
-                    console.log({
-                        pos,
-                        t: anchor.top,
-                        prog: s(pos),
-                        b: anchor.top + totalHeight,
-                        height
-                    })
                     return s(pos)
                 }),
                 distinctUntilChanged()
@@ -171,15 +165,15 @@ export class Graphic {
                 progress$.subscribe(p => {
                     if (index === 0) {
                         if (p === 1) {
-                            scene.graphicContainer.classList.add("hidden-scene")
+                            scene.graphicContainer.classList.add(this.hiddenClass)
                         } else {
-                            scene.graphicContainer.classList.remove("hidden-scene")
+                            scene.graphicContainer.classList.remove(this.hiddenClass)
                         }
                     } else {
                         if (p === 0) {
-                            scene.graphicContainer.classList.add("hidden-scene");
+                            scene.graphicContainer.classList.add(this.hiddenClass);
                         } else {
-                            scene.graphicContainer.classList.remove("hidden-scene");
+                            scene.graphicContainer.classList.remove(this.hiddenClass);
                         }
                     }
                 })
@@ -227,21 +221,10 @@ export class Graphic {
 
     private initializePlateStyles(id: string) {
         const m = document.getElementById(id);
-        m.appendChild(this.vizPlate);
-        m.appendChild(this.textPlate);
-        this.textPlate.style.zIndex = "10";
-        this.vizPlate.style.zIndex = "1";
-        this.textPlate.style.position = "relative";
-        this.vizPlate.style.position = "relative";
-        this.textPlate.style.top = "0";
-        this.vizPlate.style.top = "0";
-        this.textPlate.style.left = "0";
-        this.vizPlate.style.left = "0";
-        this.vizPlate.style.marginLeft = "0";
-        this.textPlate.style.width = "100%";
-        this.vizPlate.style.width = "100%";
         this.vizPlate.classList.add("viz-plate");
         this.textPlate.classList.add("text-plate");
+        m.appendChild(this.vizPlate);
+        m.appendChild(this.textPlate);
     }
 
 
