@@ -1,6 +1,6 @@
 {
   "name": "scrolly-teller",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "A library for creating scrollytelling web graphics",
   "main": "dist/main.js",
   "module": "dist/main.js",

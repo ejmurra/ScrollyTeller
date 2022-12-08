@@ -1,6 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { iScene, SceneActivationParams, SceneMountParams } from "./Graphic";
+import {iScene, SceneActivationParams, SceneMountParams, TextItem} from "./Graphic";
 import { BehaviorSubject, combineLatest, Observable, Subscription, fromEvent, of } from "rxjs";
 import { select } from "d3";
 import { debounceTime, distinctUntilChanged, withLatestFrom, throttleTime, switchMap, } from "rxjs/operators";
@@ -89,6 +89,7 @@ export class Stage implements iStage {
 export class StageScene implements iScene {
     public screenLengths: number = 0;
     public graphicContainer: HTMLDivElement;
+    public text: TextItem[];
 
     private steps: {screenLengthPos: number, stage: iStage, id: string}[] = [];
     private stages: {[id: string]: iStage}
@@ -211,6 +212,8 @@ export type VideoParams = {
     frameStepsMobile: number;
     numFrames: number;
     isMobile: boolean;
+    text: any[];
+    pinZero?: boolean;
 }
 
 export type VideoSceneParams = SceneParams & VideoParams;
@@ -218,7 +221,7 @@ export type VideoSceneParams = SceneParams & VideoParams;
 export class VideoScene implements iScene {
     public screenLengths = 0;
     public graphicContainer: HTMLDivElement;
-    public textContainer: HTMLDivElement;
+    public text: TextItem[];
 
     private vidEl: HTMLVideoElement;
     private framerate: number;
@@ -234,6 +237,7 @@ export class VideoScene implements iScene {
     private isMounted = false;
     private isMobile = false;
     private pinClass = "pinned";
+    private pinZero = false;
 
     constructor(p: VideoSceneParams) {
         this.vidEl = p.vidEl
@@ -243,16 +247,23 @@ export class VideoScene implements iScene {
         this.frameStepsMobile = p.frameStepsMobile;
         // this.steps = p.steps;
         this.numFrames = p.numFrames;
-        this.isMobile = p.isMobile
+        this.isMobile = p.isMobile;
+        if (p.pinZero) {
+            this.pinZero = true
+        }
+
 
         this.timeupdate$ = fromEvent<number>(this.vidEl, "timeupdate")
 
         this.graphicContainer = document.createElement("div")
-        this.textContainer = document.createElement("div")
+        this.text = p.text.map(x => <TextItem>({...x, screens: +x.screens}))
         this.graphicContainer.classList.add("vid-container")
         this.graphicContainer.classList.add(this.isMobile ? "mobile-vid" : "desktop-vid")
-        this.graphicContainer.classList.add(this.pinClass);
-        for (let el of [this.graphicContainer, this.textContainer]) {
+        if (this.pinZero) {
+            this.graphicContainer.classList.add(this.pinClass);
+        }
+
+        for (let el of [this.graphicContainer]) {
             el.style.width = "100%";
         }
         this.graphicContainer.append(this.vidEl);
@@ -267,8 +278,13 @@ export class VideoScene implements iScene {
                 this.graphicContainer.classList.remove(`not-${this.pinClass}`)
             }
             if (p === 0) {
-                this.graphicContainer.classList.remove(this.pinClass)
-                this.graphicContainer.classList.add(`not-${this.pinClass}`)
+                if (this.pinZero) {
+                    this.graphicContainer.classList.add(this.pinClass);
+                    this.graphicContainer.classList.remove(`not-${this.pinClass}`)
+                } else {
+                    this.graphicContainer.classList.remove(this.pinClass)
+                    this.graphicContainer.classList.add(`not-${this.pinClass}`)
+                }
             } else if (p === 1) {
                 // TODO: different class to pin to bottom?
                 this.graphicContainer.classList.remove(this.pinClass)

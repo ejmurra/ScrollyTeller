@@ -1,4 +1,4 @@
-import { Observable, BehaviorSubject, Subscription, combineLatest, fromEvent, of } from "rxjs";
+import { Observable, BehaviorSubject, Subscription, combineLatest, fromEvent, of, interval } from "rxjs";
 import { distinctUntilChanged, debounceTime, bufferCount, filter, map, switchMap, } from "rxjs/operators";
 import { scaleLinear } from "d3-scale";
 
@@ -20,10 +20,16 @@ export type SceneMountParams = {
     vizPlate: HTMLDivElement;
 }
 
+export interface TextItem {
+    elType: string;
+    text: string;
+    screens: number;
+}
+
 export interface iScene {
     screenLengths: number;
     graphicContainer: HTMLDivElement;
-    // textContainer: HTMLDivElement;
+    text: TextItem[];
     activate(params: SceneActivationParams): Subscription[];
     deactivate(subs: Subscription[]): void;
     mount(params: SceneMountParams): void;
@@ -33,10 +39,15 @@ export type GraphicParams = {
     scenes: {[id: string]: iScene};
     sceneOrder: string[];
     mountPoint: string;
-    text: any[];
+    // text: any[];
     debug?: boolean;
     sceneBuffer?: number;
     hiddenClass?: string;
+}
+
+export type ActiveStep = {
+    el: HTMLDivElement;
+    screenLengthPos: number;
 }
 
 export class Graphic {
@@ -46,24 +57,27 @@ export class Graphic {
     private screenHeight$: BehaviorSubject<number>;
     private fallback$: BehaviorSubject<boolean>;
     private scrollPos$: Observable<number>;
+    private headerBuffer = 50;
     // private scrollRel$: Observable<number>;
     private totalScreenLengths: number;
     private vizPlate: HTMLDivElement;
     private textPlate: HTMLDivElement;
     private sceneBuffer: number;
-    private text: any[];
+    private steps: any[];
+    private activeSteps: ActiveStep[] = [];
+    // private text: any[];
     private isMounted: boolean = false;
     private hiddenClass: string = "hidden-scene"
     // private b1: HTMLDivElement;
     // private b2: HTMLDivElement;
     private mountPoint: string;
+    private anchorPos$: Observable<number>;
 
     private cancelOnUnmount: Subscription[] = [];
 
-    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, text, hiddenClass}: GraphicParams) {
+    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, hiddenClass}: GraphicParams) {
         this.scenes = scenes;
         this.hiddenClass = hiddenClass || "hidden-scene";
-        this.text = text;
         this.sceneOrder = sceneOrder;
         this.resize$ = new BehaviorSubject(window)
         this.screenHeight$ = new BehaviorSubject(window.innerHeight - 50);
@@ -78,10 +92,24 @@ export class Graphic {
         // Spacer elements for before an after the graphic
         // this.b1 = document.createElement("div");
         // this.b2 = document.createElement("div");
+        this.steps = this.sceneOrder.map(x => this.scenes[x])
+            .reduce((a, e) => {
+                    let t = e.text.map(x => ({...x, screens: a["s"] + x.screens}))
+                    a["s"] += e.screenLengths;
+                    a["t"] = [...a["t"], ...t]
+                    return a;
+                }, {s: 0, t: []}
+            ).t;
+
 
         // Set up scroll notification
         const anchor = document.getElementById(mountPoint);
         if (!anchor) throw new Error(`Cannot find mount point ${mountPoint}`);
+
+        this.anchorPos$ = interval(500).pipe(
+            map<any, number>(() => anchor.getBoundingClientRect().top + window.scrollY),
+            distinctUntilChanged()
+        )
 
         if (debug) {
             this.cancelOnUnmount.push(
@@ -97,9 +125,9 @@ export class Graphic {
                 [
                     // ["resize", this.resize$],
                     // ["scrollPos", this.scrollPos$],
-                    // ["scrollRel", this.scrollRel$],
                     // ["fallback", this.fallback$],
-                    // ["screenHeight", this.screenHeight$]
+                    // ["screenHeight", this.screenHeight$],
+                    // [`${mountPoint}-anchorPos`, this.anchorPos$]
                 ].map(([name, sub]) => (<any>sub).subscribe(log(name)))
             )
         }
@@ -117,7 +145,7 @@ export class Graphic {
 
         this.listenResize(initialHeight);
 
-        // TODO: Attach text
+        this.attachText()
 
         this.attachSceneContainers();
 
@@ -125,14 +153,49 @@ export class Graphic {
         this.isMounted = true;
     }
 
+    // public run(debug = false): void {
+    //     if (this.isMounted) {
+    //         this.activateAllScenes(debug);
+    //     }
+    // }
+
     public unmount(): void {
         for (let sub of this.cancelOnUnmount) {
             sub.unsubscribe();
         }
     }
 
+    private attachText(): void {
+        for (let step of this.steps) {
+            if (!this.isMounted) {
+                if (!step.type) {
+                    const p = document.createElement(step.elType);
+                    p.classList.add("stepper-text")
+                    p.innerHTML = step.text;
+                    const d = document.createElement("div")
+                    d.classList.add("step")
+                    d.append(p)
+                    this.textPlate.append(d);
+                    this.activeSteps.push({
+                        el: d,
+                        screenLengthPos: step.screens
+                    })
+                }
+            }
+        }
+
+        this.cancelOnUnmount.push(this.screenHeight$.subscribe(s => this.adjustStepheight(s)));
+    }
+
+    private adjustStepheight(x: number) {
+        // const anchor = document.getElementById(this.mountPoint).getBoundingClientRect();
+        for (let step of this.activeSteps) {
+            step.el.style.top = `${x * step.screenLengthPos}px`
+        }
+    }
+
     private activateAllScenes() {
-        const anchor = document.getElementById(this.mountPoint).getBoundingClientRect();
+        // const anchor = document.getElementById(this.mountPoint).getBoundingClientRect();
         this.sceneOrder.map((id, index) => {
             const scene = this.scenes[id];
             let offsetScreens = 0;
@@ -144,14 +207,25 @@ export class Graphic {
             }
             // offsetScreens += this.screenBuffer
 
-            const progress$ = combineLatest([this.scrollPos$, this.screenHeight$]).pipe(
-                map(([pos, height]) => {
+            const progress$ = combineLatest([this.scrollPos$, this.screenHeight$, this.anchorPos$]).pipe(
+                map(([pos, height, anchorTop]) => {
                     const totalHeight = scene.screenLengths * height;
-                    let s = scaleLinear().domain([anchor.top, anchor.top + totalHeight + height]).range([0, 1]).clamp(true);
+                    let s = scaleLinear().domain([anchorTop + this.headerBuffer, anchorTop + this.headerBuffer + totalHeight + height]).range([0, 1]).clamp(true);
                     return s(pos)
                 }),
                 distinctUntilChanged()
             )
+
+            // if (debug) {
+            //     this.cancelOnUnmount = this.cancelOnUnmount.concat(
+            //         [
+            //             ["progress", progress$],
+            //             ["anchorTop", this.anchorPos$],
+            //             ["position", this.scrollPos$]
+            //         ].map(([name, sub]) => (<any>sub).subscribe(log(name)))
+            //     )
+            // }
+
 
             scene.activate({
                 resize$: this.resize$,
