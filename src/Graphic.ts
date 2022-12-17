@@ -43,6 +43,7 @@ export type GraphicParams = {
     debug?: boolean;
     sceneBuffer?: number;
     hiddenClass?: string;
+    isMobile?: boolean;
 }
 
 export type ActiveStep = {
@@ -66,16 +67,18 @@ export class Graphic {
     private steps: any[];
     private activeSteps: ActiveStep[] = [];
     // private text: any[];
+    private isMobile: boolean;
     private isMounted: boolean = false;
     private hiddenClass: string = "hidden-scene"
     // private b1: HTMLDivElement;
     // private b2: HTMLDivElement;
     private mountPoint: string;
     private anchorPos$: Observable<number>;
+    private initialHeight: number;
 
     private cancelOnUnmount: Subscription[] = [];
 
-    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, hiddenClass}: GraphicParams) {
+    constructor({scenes, sceneOrder, debug, mountPoint, sceneBuffer, hiddenClass, isMobile}: GraphicParams) {
         this.scenes = scenes;
         this.hiddenClass = hiddenClass || "hidden-scene";
         this.sceneOrder = sceneOrder;
@@ -83,6 +86,10 @@ export class Graphic {
         this.screenHeight$ = new BehaviorSubject(window.innerHeight - 50);
         this.fallback$ = new BehaviorSubject(false);
         this.mountPoint = mountPoint;
+        if (isMobile) {
+            this.isMobile = true;
+        }
+        this.initialHeight = window.innerHeight;
         // This adds a default half screen-length buffer before and after the graphic
         this.sceneBuffer = sceneBuffer || .5
         this.totalScreenLengths = Object.entries(scenes).map(([k, v]) => v.screenLengths + this.sceneBuffer).reduce((a, c) => a + c, 0);
@@ -138,12 +145,14 @@ export class Graphic {
     }
 
     public mount(): void {
-        let initialHeight = window.innerHeight;
+        this.initialHeight = window.innerHeight;
         if (!this.isMounted) {
             this.initializePlateStyles(this.mountPoint);
         }
 
-        this.listenResize(initialHeight);
+        // this.screenHeight$.next(initialHeight);
+
+        this.listenResize(this.initialHeight);
 
         this.attachText()
 
@@ -168,7 +177,7 @@ export class Graphic {
     private attachText(): void {
         for (let step of this.steps) {
             if (!this.isMounted) {
-                if (!step.type) {
+                if (step.elType !== "h1") {
                     const p = document.createElement(step.elType);
                     p.classList.add("stepper-text")
                     p.innerHTML = step.text;
@@ -179,6 +188,34 @@ export class Graphic {
                     this.activeSteps.push({
                         el: d,
                         screenLengthPos: step.screens
+                    })
+                }
+                if (step.elType === "h1") {
+                    const container = document.createElement("p")
+                    container.classList.add("byline-block");
+                    const b1 = document.createElement("span")
+                    const b2 = document.createElement("span")
+                    const d = document.createElement("span")
+                    b1.classList.add("byline1")
+                    b2.classList.add("byline2")
+                    d.classList.add("dateline")
+                    b1.innerHTML = step.byline1
+                    b2.innerHTML = step.byline2
+                    d.innerHTML = step.date;
+                    container.append(b1)
+                    container.append(b2)
+                    container.append(d)
+                    const x = document.createElement("div")
+                    const h1 = document.createElement("h1")
+                    h1.innerHTML = step.text;
+                    x.append(h1);
+                    x.append(container);
+                    x.classList.add("step");
+                    x.classList.add("title-step");
+                    this.textPlate.append(x)
+                    this.activeSteps.push({
+                        el: x,
+                        screenLengthPos: step.screens,
                     })
                 }
             }
@@ -271,12 +308,14 @@ export class Graphic {
     private listenResize(initialHeight: number) {
         this.cancelOnUnmount.push(
             this.resize$.subscribe(x => {
-                if (x.innerHeight > initialHeight && x.innerHeight - initialHeight <= 60) {
-                    this.vizPlate.style.marginTop = `${x.innerHeight - initialHeight}px`;
-                } else if (x.innerHeight == initialHeight) {
-                    this.vizPlate.style.marginTop = "0px";
-                }
-                return this.screenHeight$.next(Math.abs(x.innerHeight - initialHeight) <= 60 ? initialHeight : x.innerHeight)
+                // if (x.innerHeight > initialHeight && x.innerHeight - initialHeight <= 60) {
+                //     this.vizPlate.style.marginTop = `${x.innerHeight - initialHeight}px`;
+                // } else if (x.innerHeight == initialHeight) {
+                //     this.vizPlate.style.marginTop = "0px";
+                // }
+                return this.isMobile ?
+                    this.screenHeight$.next(Math.abs(x.innerHeight - initialHeight) <= 60 ? initialHeight : x.innerHeight)
+                    : this.screenHeight$.next(this.initialHeight);
             })
         );
         this.cancelOnUnmount.push(

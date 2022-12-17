@@ -252,7 +252,6 @@ export class VideoScene implements iScene {
             this.pinZero = true
         }
 
-
         this.timeupdate$ = fromEvent<number>(this.vidEl, "timeupdate")
 
         this.graphicContainer = document.createElement("div")
